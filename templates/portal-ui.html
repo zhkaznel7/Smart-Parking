@@ -1,0 +1,4 @@
+{% macro icon(name, cls='') -%}<svg class="icon {{ cls }}" aria-hidden="true"><use href="{{ url_for('static', filename='parking-icons.svg') }}#{{ name }}"></use></svg>{%- endmacro %}
+{% macro brand() -%}<a class="brand" href="/">{{ icon('parking') }}<span>Smart Parking</span></a>{%- endmacro %}
+{% macro close() -%}<button type="button" class="icon-button close-dialog" aria-label="Закрыть">{{ icon('close') }}</button>{%- endmacro %}
+{% macro map_controls() -%}<div class="map-controls" aria-label="Масштаб карты"><button type="button" class="icon-button" data-zoom="out" aria-label="Уменьшить карту">{{ icon('minus') }}</button><output id="map-zoom-label">100%</output><button type="button" class="icon-button" data-zoom="in" aria-label="Увеличить карту">{{ icon('plus') }}</button><button type="button" class="icon-button" data-zoom="reset" aria-label="Сбросить масштаб">{{ icon('expand') }}</button></div>{%- endmacro %}

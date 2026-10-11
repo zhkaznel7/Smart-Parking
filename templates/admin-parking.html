@@ -1,0 +1,63 @@
+{% from 'portal-ui.html' import icon, brand, close, map_controls %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}"><meta name="robots" content="noindex,nofollow">
+  <title>Smart Parking — центр управления</title>
+  <link rel="stylesheet" href="{{ url_for('static',filename='css/parking-control.css') }}">
+  <script defer src="{{ url_for('static',filename='portal-common.js') }}"></script>
+  <script defer src="{{ url_for('static',filename='admin-parking.js') }}"></script>
+</head>
+<body class="admin">
+  <header class="control-header">
+    {{ brand() }}
+    <nav class="control-nav" aria-label="Разделы администратора">
+      <button data-view="overview" class="active">Обзор</button>
+      <button data-view="map">Парковка</button>
+      <button data-view="active">Автомобили <span id="nav-active-count">0</span></button>
+      <button data-view="history">История</button>
+      <button data-view="settings">Тарифы</button>
+    </nav>
+    <div class="admin-profile"><span class="profile-symbol">{{ icon('shield') }}</span><div><strong>{{ username }}</strong><small>Администратор</small></div><button id="logout" class="icon-button" aria-label="Выйти" title="Выйти">{{ icon('exit') }}</button></div>
+  </header>
+  <main class="admin-main">
+    <header class="command-heading"><div><p class="overline">ГОРОДСКАЯ МОБИЛЬНОСТЬ / ЦЕНТР УПРАВЛЕНИЯ</p><h1 id="admin-title">Обзор парковки</h1><p id="admin-subtitle">Каждое место. Каждый автомобиль. Одна схема.</p></div><a class="text-link" href="/">Клиентский сайт {{ icon('arrow') }}</a></header>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <section class="telemetry-strip" aria-label="Состояние парковки">
+      <div><span class="metric-label">Всего мест</span><strong id="total">—</strong></div>
+      <div class="metric-free"><span class="metric-label"><i class="dot green"></i>Свободно</span><strong id="available">—</strong></div>
+      <div class="metric-busy"><span class="metric-label"><i class="dot coral"></i>Занято</span><strong id="occupied">—</strong><small id="active-summary">Активные сессии</small></div>
+      <div class="metric-access"><span class="metric-label">{{ icon('wheelchair') }}Специальные</span><strong id="accessible">—</strong><small id="pending-summary">Ожидают проверки: —</small></div>
+      <div class="metric-fee"><span class="metric-label">К оплате сейчас</span><strong id="total-fees">— ₸</strong><small id="fee-summary">По активным сессиям</small></div>
+    </section>
+    <section id="admin-map-section" class="map-console">
+      <div class="console-heading"><div><p class="overline">01 / ПРОСТРАНСТВО</p><h2>Схема парковки</h2></div><label class="lot-select-label">Участок<select id="lot-filter" aria-label="Выбор парковки"></select></label></div>
+      <div class="map-toolbar"><div class="legend"><span><i class="dot green"></i>Свободно</span><span><i class="dot coral"></i>Занято</span><span>{{ icon('wheelchair') }}Специальное</span><span><i class="dot amber"></i>Ожидает проверки</span></div>{{ map_controls() }}</div>
+      <div class="map-filter-bar"><div class="segmented"><button data-filter="all" class="selected">Все места</button><button data-filter="free">Свободные</button><button data-filter="accessible">Специальные</button><button data-filter="pending">Ожидают проверки</button></div><span class="map-instruction">Нажмите на место — откроются детали {{ icon('arrow') }}</span></div>
+      <div class="map-viewport" role="region" aria-label="Интерактивная схема парковки" tabindex="0"><div id="spot-grid" class="parking-map" data-zoom="100"><p class="empty map-empty">Загружаем места…</p></div></div>
+      <div class="map-caption"><span>{{ icon('grid') }} Схематичный план · данные из базы</span><span id="map-count"></span><span id="map-updated" class="sync-label">Ожидаем данные</span></div>
+    </section>
+    <section id="attention-section" class="attention-strip"><div>{{ icon('wheelchair') }}<span>Проверка права<br><strong>Доступная среда</strong></span></div><div id="attention-list">Загружаем запросы…</div></section>
+    <section id="admin-sessions-section" class="operations-panel" hidden>
+      <div class="panel-heading"><div><p class="overline">02 / АВТОМОБИЛИ</p><h2 id="table-title">Автомобили на парковке</h2><p id="table-description">Въезды, стоимость и связь с клиентами.</p></div><label class="search-box">{{ icon('search') }}<input id="search" placeholder="Поиск по гос. номеру..." aria-label="Поиск по гос. номеру"></label></div>
+      <div class="table-wrap"><table class="history-table"><colgroup><col class="col-client"><col class="col-spot"><col class="col-times"><col class="col-duration"><col class="col-fee"><col class="col-access"><col class="col-actions"></colgroup><thead><tr><th>Клиент и автомобиль</th><th>Место</th><th>Въезд / выезд</th><th>Длительность</th><th>К оплате</th><th>Доступность</th><th>Действия</th></tr></thead><tbody id="session-rows"></tbody></table></div>
+    </section>
+    <section id="admin-settings-section" class="settings-layout" hidden>
+      <form id="tariff-form" class="settings-panel"><p class="overline">03 / УСЛОВИЯ ПАРКОВКИ</p><h2>Тариф</h2><p>Новый тариф действует только для будущих въездов. У уже припаркованных автомобилей сохраняются условия въезда.</p><label>Бесплатный период, минут<input name="free_minutes" type="number" min="0" max="1440" required></label><label>Стоимость начатого дополнительного часа, ₸<input name="hourly_fee" type="number" min="0" max="100000" required></label><p class="form-error" role="alert"></p><button type="submit" class="button">Сохранить тариф {{ icon('check') }}</button></form>
+      <section class="settings-panel"><p class="overline">04 / УЧАСТКИ</p><h2>Парковки и специальные места</h2><p>Добавляйте парковки и отмечайте специальные места на схеме. Тип занятого места изменить нельзя.</p><div id="lot-list"></div><button id="add-lot" class="button button-light">Добавить парковку {{ icon('plus') }}</button><div class="eligibility-note">Для бесплатной парковки подтвердите право клиента в деталях автомобиля. Медицинские сведения не запрашиваются.</div></section>
+    </section>
+    <footer class="control-footer"><span>Smart Parking <span class="footer-separator">/</span> Центр управления</span><span><i class="status-dot"></i>Автоматическое обновление</span></footer>
+  </main>
+  <dialog id="details-dialog" class="context-panel" aria-labelledby="detail-title">
+    <div class="sheet-handle" aria-hidden="true"></div><div class="dialog-heading"><div><p class="overline">АВТОМОБИЛЬ / ДЕТАЛИ</p><h2 id="detail-title">Автомобиль</h2></div>{{ close() }}</div>
+    <div class="dialog-scroll"><div id="detail-content"></div>
+    <div id="verification-actions" hidden><p class="overline">ПРОВЕРКА ПРАВА</p><p class="muted">Подтвердите право клиента без сохранения медицинских документов.</p><div class="action-row"><button id="confirm-eligibility" class="button">Подтвердить</button><button id="reject-eligibility" class="button button-light">Не подтверждено</button></div></div>
+    <form id="message-form"><label>Сообщение клиенту<textarea name="body" rows="3" maxlength="1000" required placeholder="Напишите сообщение о парковке"></textarea></label><p class="form-error" role="alert"></p><button type="submit" class="button button-light full-width">Отправить сообщение {{ icon('message') }}</button></form><div id="admin-messages"></div>
+    </div><div class="dialog-bottom"><button id="detail-exit" class="button button-danger full-width">Завершить парковку {{ icon('exit') }}</button><button id="detail-delete" type="button" class="button button-danger full-width" hidden>Удалить запись {{ icon('close') }}</button><p class="form-error" id="detail-error" role="alert"></p></div>
+  </dialog>
+  <dialog id="spot-dialog" class="context-panel" aria-labelledby="spot-title"><form id="spot-form"><div class="sheet-handle" aria-hidden="true"></div><div class="dialog-heading"><div><p class="overline">ПАРКОВОЧНОЕ МЕСТО</p><h2 id="spot-title">Место</h2></div>{{ close() }}</div><div id="spot-info"></div><label class="checkbox-label"><input name="is_accessible" type="checkbox">Место для людей с инвалидностью</label><p class="muted">Бесплатная парковка предоставляется после проверки права клиента администратором.</p><p class="form-error" role="alert"></p><button type="submit" class="button full-width">Сохранить тип места {{ icon('check') }}</button></form></dialog>
+  <dialog id="exit-dialog" class="confirmation-dialog" aria-labelledby="exit-title"><form id="exit-form" class="confirmation-form"><div class="sheet-handle" aria-hidden="true"></div><div class="dialog-heading"><h2 id="exit-title">Завершить парковку</h2>{{ close() }}</div><div class="confirmation-body"><p id="exit-description" class="confirmation-description"></p><div class="eligibility-note">Итоговая сумма будет рассчитана сервером в момент выезда. Запись останется в истории. Для непроверенных импортированных данных сумма не начисляется автоматически и требует отдельной проверки.</div></div><div class="confirmation-footer"><p class="form-error" role="alert"></p><div class="action-row"><button type="button" class="button button-light close-dialog">Отмена</button><button type="submit" class="button">Подтвердить выезд</button></div></div></form></dialog>
+  <dialog id="delete-dialog" class="confirmation-dialog" aria-labelledby="delete-title"><form id="delete-form" class="confirmation-form"><div class="sheet-handle" aria-hidden="true"></div><div class="dialog-heading"><h2 id="delete-title">Удалить запись</h2>{{ close() }}</div><div class="confirmation-body"><p id="delete-description" class="confirmation-description"></p><div class="eligibility-note">Действие необратимо в приложении. Будут удалены только выбранная завершённая сессия и её сообщения. Автомобиль, другие сессии и состояние парковочных мест сохранятся.</div><label class="checkbox-label"><input name="confirm" type="checkbox" required>Подтверждаю безвозвратное удаление этой записи</label></div><div class="confirmation-footer"><p class="form-error" role="alert"></p><div class="action-row"><button type="button" class="button button-light close-dialog">Отмена</button><button type="submit" class="button button-danger">Удалить безвозвратно</button></div></div></form></dialog>
+  <dialog id="lot-dialog" aria-labelledby="lot-title"><form id="lot-form"><div class="sheet-handle" aria-hidden="true"></div><div class="dialog-heading"><h2 id="lot-title">Добавить парковку</h2>{{ close() }}</div><label>Название<input name="name" maxlength="150" required></label><label>Адрес<input name="address" maxlength="150" required></label><label>Количество мест<input name="total_spots" type="number" min="1" max="500" value="24" required></label><label>Из них специальных<input name="accessible_spots" type="number" min="0" max="500" value="1" required></label><p class="form-error" role="alert"></p><button type="submit" class="button full-width">Создать парковку</button></form></dialog>
+</body></html>
